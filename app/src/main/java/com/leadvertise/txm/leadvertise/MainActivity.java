@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mBluetoothManager = (BluetoothManager)getSystemService(BLUETOOTH_SERVICE);
-        if(mBluetoothAdapter == null) {
+        if(mBluetoothManager != null && mBluetoothAdapter == null) {
             mBluetoothAdapter = mBluetoothManager.getAdapter();
         }
 
@@ -113,18 +113,23 @@ public class MainActivity extends Activity {
     }
 
     private AdvertiseData createAdvData() {
-        byte[] serviceData = new byte[7];
-        serviceData[0] = 0x00; // flags
-        serviceData[1] = (byte) 0xBA; // transmit power
-        serviceData[2] = 0x00; // http://www.
-        serviceData[3] = 0x65; // e
-        serviceData[4] = 0x66; // f
-        serviceData[5] = 0x66; // f
-        serviceData[6] = 0x08; // .org
+        byte[] serviceData = new byte[6];
+        serviceData[0] = 0x60;//a
+        serviceData[1] = (byte) 0xBA;
+        serviceData[2] = 0x00;
+        serviceData[3] = 0x65;//e
+        serviceData[4] = 0x66;//f
+        serviceData[5] = 0x66;//f
+
+
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
         dataBuilder.setIncludeTxPowerLevel(false);
-        ParcelUuid uuid = ParcelUuid.fromString("11111111-2222-3333-4444-555555555555");
-        dataBuilder.addServiceData(uuid, serviceData);
+        //ParcelUuid uuid = ParcelUuid.fromString("11111111-2222-3333-4444-555555555555");
+        ParcelUuid serviceID = ParcelUuid.fromString("12345678-1234-1234-1234-12345678");
+
+        dataBuilder.addServiceUuid(serviceID);
+        //dataBuilder.addServiceData(uuid, serviceData);
+        //dataBuilder.setIncludeDeviceName(true);
 
         return dataBuilder.build();
     }
