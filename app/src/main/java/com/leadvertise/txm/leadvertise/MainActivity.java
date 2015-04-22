@@ -53,8 +53,24 @@ public class MainActivity extends Activity {
 
         public void onStartFailure(int errorCode) {
             super.onStartFailure(errorCode);
+            switch (errorCode){
+                case ADVERTISE_FAILED_ALREADY_STARTED:
+                    str += "onStartFailure : ADVERTISE_FAILED_ALREADY_STARTED \n";
+                    break;
+                case ADVERTISE_FAILED_DATA_TOO_LARGE:
+                    str += "onStartFailure : ADVERTISE_FAILED_DATA_TOO_LARGE \n";
+                    break;
+                case ADVERTISE_FAILED_FEATURE_UNSUPPORTED:
+                    str += "onStartFailure :  ADVERTISE_FAILED_FEATURE_UNSUPPORTED \n";
+                    break;
+                case ADVERTISE_FAILED_INTERNAL_ERROR:
+                    str += "onStartFailure : ADVERTISE_FAILED_INTERNAL_ERROR \n";
+                    break;
+                case ADVERTISE_FAILED_TOO_MANY_ADVERTISERS:
+                    str += "onStartFailure : ADVERTISE_FAILED_TOO_MANY_ADVERTISERS \n";
+                    break;
+            }
 
-            str += "onStartFailure : " + errorCode + "\n";
             Log.d(TAG, "" + str);
         }
 
@@ -107,7 +123,7 @@ public class MainActivity extends Activity {
         serviceData[6] = 0x08; // .org
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
         dataBuilder.setIncludeTxPowerLevel(false);
-        ParcelUuid uuid = ParcelUuid.fromString("11111111-1234-1234-1234-123456789012");
+        ParcelUuid uuid = ParcelUuid.fromString("11111111-2222-3333-4444-555555555555");
         dataBuilder.addServiceData(uuid, serviceData);
 
         return dataBuilder.build();
