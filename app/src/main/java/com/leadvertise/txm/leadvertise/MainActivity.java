@@ -2,7 +2,16 @@ package com.leadvertise.txm.leadvertise;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattServerCallback;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -14,12 +23,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.util.UUID;
+
 
 public class MainActivity extends Activity {
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeAdvertiser mBTAdvertiser;
     private final String TAG = "LEAdvertise";
+    private BluetoothGattServer mGattServer;
+    private byte[] mName = new byte[] {
+            (byte)0x00
+    };
 
 
     @Override
@@ -42,7 +57,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 Log.d(TAG, "stop Advertisement");
                 if(mBTAdvertiser != null) {
-                    mBTAdvertiser.stopAdvertising(mAdvertiseCallback);
+                    stopAdvertising();
                 }
             }
         });
@@ -83,6 +98,19 @@ public class MainActivity extends Activity {
         }
     };
 
+    private void stopAdvertising(){
+        if (mGattServer != null) {
+            mGattServer.clearServices();
+            mGattServer.close();
+            mGattServer = null;
+        }
+        if (mBTAdvertiser != null) {
+            mBTAdvertiser.stopAdvertising(mAdvertiseCallback);
+        }
+        setProgressBarIndeterminateVisibility(false);
+
+    }
+
     private void startAdvertising(){
         Log.d(TAG, " --- > START startAdvertising");
 
@@ -99,10 +127,29 @@ public class MainActivity extends Activity {
             // サポートしていないときの処理
             Log.d(TAG, "This device does not support advertisement.");
         }
+        mGattServer = mBluetoothManager.openGattServer(this, mGattServerCallback);
+        BluetoothGattService dis = new BluetoothGattService(
+                UUID.fromString(BleUuid.CHAR_INFO),
+                BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-        mBTAdvertiser.startAdvertising(createAdvSetting(), createAdvData(), mAdvertiseCallback);
+            BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
+                UUID.fromString(BleUuid.CHAR_NAME_STRING),
+                BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PERMISSION_READ);
+
+
+
+        dis.addCharacteristic(char_name);
+        mGattServer.addService(dis);
+
+
+        mBTAdvertiser.startAdvertising(createAdvSetting(), createAdvData(),createScanRspData(), mAdvertiseCallback);
         Log.d(TAG, " --- > END startAdvertising");
+
+        setProgressBarIndeterminateVisibility(true);
+
     }
+
     private AdvertiseSettings createAdvSetting() {
         AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
         builder.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
@@ -111,24 +158,30 @@ public class MainActivity extends Activity {
         builder.setConnectable(true);
         return builder.build();
     }
-
-    private AdvertiseData createAdvData() {
+    private AdvertiseData createScanRspData() {
         byte[] serviceData = new byte[6];
-        serviceData[0] = 0x60;//a
+        serviceData[0] = 0x10;
         serviceData[1] = (byte) 0xBA;
-        serviceData[2] = 0x00;
-        serviceData[3] = 0x65;//e
-        serviceData[4] = 0x66;//f
-        serviceData[5] = 0x66;//f
+        serviceData[2] = 0x11;
+        serviceData[3] = 0x12;
+        serviceData[4] = 0x13;
+        serviceData[5] = 0x15;
 
 
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
-        dataBuilder.setIncludeTxPowerLevel(false);
-        //ParcelUuid uuid = ParcelUuid.fromString("11111111-2222-3333-4444-555555555555");
-        ParcelUuid serviceID = ParcelUuid.fromString("12345678-1234-1234-1234-12345678");
+        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.ADV_SERVICE_DATA_UUID);
+        dataBuilder.addServiceData(uuid, serviceData);
 
-        dataBuilder.addServiceUuid(serviceID);
-        //dataBuilder.addServiceData(uuid, serviceData);
+        return dataBuilder.build();
+    }
+    private AdvertiseData createAdvData() {
+
+        AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
+        dataBuilder.setIncludeTxPowerLevel(false);
+        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.ADV_SERVICE_UUID);
+
+        //UUIDとDevice名は共存できない。セットすると長過ぎるってエラーになる
+        dataBuilder.addServiceUuid(uuid);
         //dataBuilder.setIncludeDeviceName(true);
 
         return dataBuilder.build();
@@ -155,5 +208,127 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback(){
+
+        public void onCharacteristicReadRequest (BluetoothDevice device, int requestId, int offset,
+                                                 BluetoothGattCharacteristic characteristic){
+            Log.d(TAG, "START ---> onCharacteristicReadRequest()");
+            Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
+            characteristic.setValue("Name:Taichi");
+
+            mGattServer.sendResponse(device, requestId,
+                    BluetoothGatt.GATT_SUCCESS, offset,
+                    characteristic.getValue());
+        }
+
+        public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId,
+                                                  BluetoothGattCharacteristic characteristic,
+                                                  boolean preparedWrite, boolean responseNeeded,
+                                                  int offset, byte[] value){
+            Log.d(TAG, "START ---> onCharacteristicWriteRequest()");
+            if (characteristic.getUuid().equals(UUID.fromString(BleUuid.CHAR_NAME_STRING))) {
+                Log.d(TAG, "CHAR_NAME");
+                if (value != null && value.length > 0) {
+                    Log.d(TAG, "value.length=" + value.length);
+                    mName[0] = value[0];
+                } else {
+                    Log.d(TAG, "invalid value written");
+                }
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,
+                null);
+            }
+        }
+        public void onConnectionStateChange (BluetoothDevice device, int status, int newState){
+            Log.d(TAG, "START ---> onConnectionStateChange()");
+            Log.d(TAG, "status : " + status);
+            switch(newState) {
+                case BluetoothProfile.STATE_CONNECTED:
+                    Log.d(TAG, "newState : STATE_CONNECTED");
+                    break;
+                case BluetoothProfile.STATE_CONNECTING:
+                    Log.d(TAG, "newState : STATE_CONNECTING");
+                    break;
+                case BluetoothProfile.STATE_DISCONNECTED:
+                    Log.d(TAG, "newState : STATE_DISCONNECTED");
+                    break;
+                case BluetoothProfile.STATE_DISCONNECTING:
+                    Log.d(TAG, "newState : STATE_DISCONNECTING");
+                    break;
+                default:
+                    break;
+            } // end of switch
+        }
+        public void onDescriptorReadRequest (BluetoothDevice device, int requestId, int offset,
+                                             BluetoothGattDescriptor descriptor){
+            Log.d(TAG, "START ---> onDescriptorReadRequest()");
+
+
+        }
+        public void onDescriptorWriteRequest (BluetoothDevice device, int requestId,
+                                              BluetoothGattDescriptor descriptor,
+                                              boolean preparedWrite, boolean responseNeeded,
+                                              int offset, byte[] value){
+            Log.d(TAG, "START ---> onDescriptorWriteRequest()");
+
+
+        }
+        public void onExecuteWrite (BluetoothDevice device, int requestId, boolean execute){
+            Log.d(TAG, "START ---> onExecuteWrite()");
+
+        }
+        public void onMtuChanged (BluetoothDevice device, int mtu){
+            Log.d(TAG, "START ---> onMtuChanged()");
+
+        }
+        public void onNotificationSent (BluetoothDevice device, int status){
+            Log.d(TAG, "START ---> onNotificationSent()");
+
+        }
+        public void onServiceAdded (int status, BluetoothGattService service){
+            Log.d(TAG, "START ---> onServiceAdded()");
+            switch(status) {
+                case BluetoothGatt.GATT_CONNECTION_CONGESTED:
+                    Log.d(TAG, "status : GATT_CONNECTION_CONGESTED");
+                    break;
+                case BluetoothGatt.GATT_FAILURE:
+                    Log.d(TAG, "status : GATT_FAILURE");
+                    break;
+                case BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION:
+                    Log.d(TAG, "status : GATT_INSUFFICIENT_AUTHENTICATION");
+                    break;
+                case BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION:
+                    Log.d(TAG, "status : GATT_INSUFFICIENT_ENCRYPTION");
+                    break;
+                case BluetoothGatt.GATT_INVALID_OFFSET:
+                    Log.d(TAG, "status : GATT_INVALID_OFFSET");
+                    break;
+                case BluetoothGatt.GATT_READ_NOT_PERMITTED:
+                    Log.d(TAG, "status : GATT_READ_NOT_PERMITTED");
+                    break;
+                case BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED:
+                    Log.d(TAG, "status : GATT_REQUEST_NOT_SUPPORTED");
+                    break;
+                case BluetoothGatt.GATT_SUCCESS:
+                    Log.d(TAG, "status : GATT_SUCCESS");
+                    Log.d(TAG, "service uuid : " + service.getUuid().toString());
+                    break;
+                case BluetoothGatt.GATT_WRITE_NOT_PERMITTED:
+                    Log.d(TAG, "status : GATT_WRITE_NOT_PERMITTED");
+                    break;
+                default:
+                    break;
+
+            } // end of switch
+        }
+    };
+
+    public class BleUuid{
+        static final String ADV_SERVICE_UUID = "11111111-2222-3333-4444-555555555555";
+        static final String ADV_SERVICE_DATA_UUID = "11111111-6666-6666-6666-666666666666";
+        static final String CHAR_INFO = "99999999-1111-4444-4444-111111111111";
+        static final String CHAR_NAME_STRING = "99999999-2222-4444-4444-222222222222";
+
     }
 }
