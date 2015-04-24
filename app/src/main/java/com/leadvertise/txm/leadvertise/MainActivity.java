@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 
@@ -32,10 +33,17 @@ public class MainActivity extends Activity {
     private BluetoothLeAdvertiser mBTAdvertiser;
     private final String TAG = "LEAdvertise";
     private BluetoothGattServer mGattServer;
-    private byte[] mName = new byte[] {
-            (byte)0x00
-    };
+    private String mName;
+    private boolean isAdvertising;
+    private AdvCallback mAdvertiseCallback;
 
+    public boolean isAdvertising() {
+        return isAdvertising;
+    }
+
+    public void setAdvertising(boolean isAdvertising) {
+        this.isAdvertising = isAdvertising;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,48 +63,49 @@ public class MainActivity extends Activity {
         findViewById(R.id.btn_disconnect).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "stop Advertisement");
                 if(mBTAdvertiser != null) {
+                    Log.d(TAG, "stop Advertisement");
                     stopAdvertising();
                 }
             }
         });
     }
 
-    private AdvertiseCallback mAdvertiseCallback = new AdvertiseCallback() {
-        String str = "";
-
-        public void onStartFailure(int errorCode) {
-            super.onStartFailure(errorCode);
-            switch (errorCode){
-                case ADVERTISE_FAILED_ALREADY_STARTED:
-                    str += "onStartFailure : ADVERTISE_FAILED_ALREADY_STARTED \n";
-                    break;
-                case ADVERTISE_FAILED_DATA_TOO_LARGE:
-                    str += "onStartFailure : ADVERTISE_FAILED_DATA_TOO_LARGE \n";
-                    break;
-                case ADVERTISE_FAILED_FEATURE_UNSUPPORTED:
-                    str += "onStartFailure :  ADVERTISE_FAILED_FEATURE_UNSUPPORTED \n";
-                    break;
-                case ADVERTISE_FAILED_INTERNAL_ERROR:
-                    str += "onStartFailure : ADVERTISE_FAILED_INTERNAL_ERROR \n";
-                    break;
-                case ADVERTISE_FAILED_TOO_MANY_ADVERTISERS:
-                    str += "onStartFailure : ADVERTISE_FAILED_TOO_MANY_ADVERTISERS \n";
-                    break;
-            }
-
-            Log.d(TAG, "" + str);
-        }
-
-        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
-            super.onStartSuccess(settingsInEffect);
-
-            str += "onStartSuccess : " + settingsInEffect.toString() + "\n";
-            Log.d(TAG, str);
-
-        }
-    };
+//    public AdvertiseCallback mAdvertiseCallback = new AdvertiseCallback() {
+//
+//        String str = "";
+//
+//        public void onStartFailure(int errorCode) {
+//            super.onStartFailure(errorCode);
+//            switch (errorCode){
+//                case ADVERTISE_FAILED_ALREADY_STARTED:
+//                    str += "onStartFailure : ADVERTISE_FAILED_ALREADY_STARTED \n";
+//                    break;
+//                case ADVERTISE_FAILED_DATA_TOO_LARGE:
+//                    str += "onStartFailure : ADVERTISE_FAILED_DATA_TOO_LARGE \n";
+//                    break;
+//                case ADVERTISE_FAILED_FEATURE_UNSUPPORTED:
+//                    str += "onStartFailure :  ADVERTISE_FAILED_FEATURE_UNSUPPORTED \n";
+//                    break;
+//                case ADVERTISE_FAILED_INTERNAL_ERROR:
+//                    str += "onStartFailure : ADVERTISE_FAILED_INTERNAL_ERROR \n";
+//                    break;
+//                case ADVERTISE_FAILED_TOO_MANY_ADVERTISERS:
+//                    str += "onStartFailure : ADVERTISE_FAILED_TOO_MANY_ADVERTISERS \n";
+//                    break;
+//            }
+//
+//            Log.d(TAG, "" + str);
+//        }
+//
+//        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+//            super.onStartSuccess(settingsInEffect);
+//
+//            str += "onStartSuccess : " + settingsInEffect.toString() + "\n";
+//            Log.d(TAG, str);
+//
+//        }
+//    };
 
     private void stopAdvertising(){
         if (mGattServer != null) {
@@ -106,48 +115,53 @@ public class MainActivity extends Activity {
         }
         if (mBTAdvertiser != null) {
             mBTAdvertiser.stopAdvertising(mAdvertiseCallback);
+            setAdvertising(false);
+            mBTAdvertiser = null;
         }
-        setProgressBarIndeterminateVisibility(false);
-
     }
 
     private void startAdvertising(){
         Log.d(TAG, " --- > START startAdvertising");
 
-        if(mBluetoothAdapter == null){
-            return;
+        if(mBTAdvertiser == null) {
+            mBTAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
         }
-        if(mBluetoothManager == null){
+        final boolean isAdvertiseSupported = mBTAdvertiser != null;
+
+        if (!isAdvertiseSupported  || isAdvertising()) {
+            // サポートしていないときの処理
+            Log.d(TAG, "Not support advertisement or Already advertising.");
             return;
         }
 
-        mBTAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
-        final boolean isAdvertiseSupported = mBTAdvertiser != null;
-        if (!isAdvertiseSupported) {
-            // サポートしていないときの処理
-            Log.d(TAG, "This device does not support advertisement.");
-        }
-        mGattServer = mBluetoothManager.openGattServer(this, mGattServerCallback);
-        BluetoothGattService dis = new BluetoothGattService(
-                UUID.fromString(BleUuid.CHAR_INFO),
-                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        if (mGattServer == null) {
+            mGattServer = mBluetoothManager.openGattServer(this, mGattServerCallback);
+            BluetoothGattService dis = new BluetoothGattService(
+                    UUID.fromString(BleUuid.CHAR_INFO),
+                    BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
-                UUID.fromString(BleUuid.CHAR_NAME_STRING),
-                BluetoothGattCharacteristic.PROPERTY_READ,
-                BluetoothGattCharacteristic.PERMISSION_READ);
+                    UUID.fromString(BleUuid.CHAR_NAME_STRING),
+                    BluetoothGattCharacteristic.PROPERTY_READ,
+                    BluetoothGattCharacteristic.PERMISSION_READ);
+
+            BluetoothGattCharacteristic char_onoff = new BluetoothGattCharacteristic(
+                    UUID.fromString(BleUuid.CHAR_ONOFF_STRING),
+                    BluetoothGattCharacteristic.PROPERTY_WRITE,
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
 
 
 
-        dis.addCharacteristic(char_name);
-        mGattServer.addService(dis);
+            dis.addCharacteristic(char_name);
+            dis.addCharacteristic(char_onoff);
+            mGattServer.addService(dis);
+        }
 
-
+        mAdvertiseCallback = new AdvCallback();
         mBTAdvertiser.startAdvertising(createAdvSetting(), createAdvData(),createScanRspData(), mAdvertiseCallback);
         Log.d(TAG, " --- > END startAdvertising");
 
-        setProgressBarIndeterminateVisibility(true);
-
+        setAdvertising(true);
     }
 
     private AdvertiseSettings createAdvSetting() {
@@ -216,11 +230,13 @@ public class MainActivity extends Activity {
                                                  BluetoothGattCharacteristic characteristic){
             Log.d(TAG, "START ---> onCharacteristicReadRequest()");
             Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
-            characteristic.setValue("Name:Taichi");
 
-            mGattServer.sendResponse(device, requestId,
-                    BluetoothGatt.GATT_SUCCESS, offset,
-                    characteristic.getValue());
+            if(characteristic.getUuid().toString().equals(BleUuid.CHAR_NAME_STRING)) {
+                characteristic.setValue("111111111122222222223"); //20byte
+                mGattServer.sendResponse(device, requestId,
+                        BluetoothGatt.GATT_SUCCESS, offset,
+                        characteristic.getValue());
+            }
         }
 
         public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId,
@@ -228,21 +244,31 @@ public class MainActivity extends Activity {
                                                   boolean preparedWrite, boolean responseNeeded,
                                                   int offset, byte[] value){
             Log.d(TAG, "START ---> onCharacteristicWriteRequest()");
-            if (characteristic.getUuid().equals(UUID.fromString(BleUuid.CHAR_NAME_STRING))) {
-                Log.d(TAG, "CHAR_NAME");
-                if (value != null && value.length > 0) {
-                    Log.d(TAG, "value.length=" + value.length);
-                    mName[0] = value[0];
+            Log.d(TAG, "value.length = " + value.length);
+            Log.d(TAG, "offset : " + offset);
+            Log.d(TAG, "requestId : " + requestId);
+            Log.d(TAG, "responseNeeded : " + responseNeeded);
+            Log.d(TAG, "preparedWrite : " + preparedWrite);
+
+
+            if (characteristic.getUuid().equals(UUID.fromString(BleUuid.CHAR_ONOFF_STRING))) {
+                if (value != null && value.length > 0 && value.length < 21) {
+                    try {
+                        mName = new String(value, "UTF-8");
+                    }catch (UnsupportedEncodingException e){
+                        e.printStackTrace();
+                    }
+                    Log.d(TAG, "name : " + mName);
+
                 } else {
                     Log.d(TAG, "invalid value written");
                 }
-                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,
-                null);
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
             }
         }
         public void onConnectionStateChange (BluetoothDevice device, int status, int newState){
             Log.d(TAG, "START ---> onConnectionStateChange()");
-            Log.d(TAG, "status : " + status);
+            Log.d(TAG, "status : " + status + "(0 means GATT_SUCCESS)");
             switch(newState) {
                 case BluetoothProfile.STATE_CONNECTED:
                     Log.d(TAG, "newState : STATE_CONNECTED");
@@ -275,7 +301,11 @@ public class MainActivity extends Activity {
 
         }
         public void onExecuteWrite (BluetoothDevice device, int requestId, boolean execute){
-            Log.d(TAG, "START ---> onExecuteWrite()");
+            Log.d(TAG, "START ---> onExecuteWrite() device : " + device.getName());
+            Log.d(TAG, "requestId : " + requestId);
+            Log.d(TAG, "execute : " + execute);
+            super.onExecuteWrite(device, requestId, execute);
+            //mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
 
         }
         public void onMtuChanged (BluetoothDevice device, int mtu){
@@ -329,6 +359,6 @@ public class MainActivity extends Activity {
         static final String ADV_SERVICE_DATA_UUID = "11111111-6666-6666-6666-666666666666";
         static final String CHAR_INFO = "99999999-1111-4444-4444-111111111111";
         static final String CHAR_NAME_STRING = "99999999-2222-4444-4444-222222222222";
-
+        static final String CHAR_ONOFF_STRING = "99999999-3333-4444-4444-222222222222";
     }
 }
