@@ -35,7 +35,6 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
 
         if(characteristic.getUuid().toString().equals(BleUuid.CHAR_NAME_STRING)) {
-            characteristic.setValue("111111111122222222223"); //20byte
             mGattServer.sendResponse(device, requestId,
                     BluetoothGatt.GATT_SUCCESS, offset,
                     characteristic.getValue());

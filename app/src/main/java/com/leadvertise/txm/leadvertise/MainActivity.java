@@ -33,7 +33,6 @@ public class MainActivity extends Activity {
     private BluetoothLeAdvertiser mBTAdvertiser;
     private final String TAG = "LEAdvertise";
     private BluetoothGattServer mGattServer;
-    private String mName;
     private boolean isAdvertising;
     private AdvCallback mAdvertiseCallback;
     private GattServerCallback mGattServerCallback;
@@ -112,6 +111,8 @@ public class MainActivity extends Activity {
                     UUID.fromString(BleUuid.CHAR_NAME_STRING),
                     BluetoothGattCharacteristic.PROPERTY_READ,
                     BluetoothGattCharacteristic.PERMISSION_READ);
+            char_name.setValue("KTEC Corp");
+
 
             BluetoothGattCharacteristic char_onoff = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.CHAR_ONOFF_STRING),
