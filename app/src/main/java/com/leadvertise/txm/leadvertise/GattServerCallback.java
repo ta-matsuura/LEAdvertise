@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
@@ -20,8 +22,10 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     private String mName;
     private final String TAG = "LEAdvertise";
     private BluetoothGattServer mGattServer;
+    private MyHandler mHandler;
 
-    public GattServerCallback() {
+    public GattServerCallback(MyHandler myhandler) {
+        mHandler = myhandler;
     }
 
     public void setGattServer(BluetoothGattServer mGattServer) {
@@ -39,6 +43,12 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                     BluetoothGatt.GATT_SUCCESS, offset,
                     characteristic.getValue());
         }
+        Message message = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putInt("msg_type", MyConstants.READ_REQ_RESULT);
+        bundle.putString("value", characteristic.getStringValue(0));
+        message.setData(bundle);
+        mHandler.sendMessage(message);
     }
 
     public void onCharacteristicWriteRequest (BluetoothDevice device, int requestId,
@@ -67,6 +77,12 @@ public class GattServerCallback extends BluetoothGattServerCallback{
             }
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
         }
+        Message message = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
+        bundle.putString("value", mName);
+        message.setData(bundle);
+        mHandler.sendMessage(message);
     }
     public void onConnectionStateChange (BluetoothDevice device, int status, int newState){
         Log.d(TAG, "START ---> onConnectionStateChange()");

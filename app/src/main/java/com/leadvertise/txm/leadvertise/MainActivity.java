@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
@@ -100,7 +101,7 @@ public class MainActivity extends Activity {
 
 
         if (mGattServer == null) {
-            mGattServerCallback = new GattServerCallback();
+            mGattServerCallback = new GattServerCallback(myhandler);
             mGattServer = mBluetoothManager.openGattServer(this, mGattServerCallback);
             mGattServerCallback.setGattServer(mGattServer);
             BluetoothGattService dis = new BluetoothGattService(
@@ -192,4 +193,19 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private MyHandler myhandler = new MyHandler() {
+        @Override
+        public void onReadReqCompleted(String str) {
+            TextView tx = (TextView)findViewById(R.id.result_area);
+            tx.setText(str);
+
+        }
+        @Override
+        public void onWriteReqCompleted(String str) {
+            TextView tx = (TextView)findViewById(R.id.result_area);
+            tx.setText(str);
+
+        }
+    };
 }
