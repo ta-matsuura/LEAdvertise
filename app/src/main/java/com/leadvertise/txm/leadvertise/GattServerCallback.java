@@ -48,6 +48,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         bundle.putInt("msg_type", MyConstants.READ_REQ_RESULT);
         bundle.putString("value", characteristic.getStringValue(0));
         message.setData(bundle);
+        Log.d(TAG, "send Message to handler");
         mHandler.sendMessage(message);
     }
 
@@ -82,6 +83,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
         bundle.putString("value", mName);
         message.setData(bundle);
+        Log.d(TAG, "send Message to handler");
         mHandler.sendMessage(message);
     }
     public void onConnectionStateChange (BluetoothDevice device, int status, int newState){

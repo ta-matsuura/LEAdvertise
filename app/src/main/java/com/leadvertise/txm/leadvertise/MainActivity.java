@@ -197,12 +197,14 @@ public class MainActivity extends Activity {
     private MyHandler myhandler = new MyHandler() {
         @Override
         public void onReadReqCompleted(String str) {
+            Log.d(TAG, "Update the result area.");
             TextView tx = (TextView)findViewById(R.id.result_area);
             tx.setText(str);
 
         }
         @Override
         public void onWriteReqCompleted(String str) {
+            Log.d(TAG, "Update the result area.");
             TextView tx = (TextView)findViewById(R.id.result_area);
             tx.setText(str);
 
