@@ -23,6 +23,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     private final String TAG = "LEAdvertise";
     private BluetoothGattServer mGattServer;
     private MyHandler mHandler;
+    private int mOffset;
 
     public GattServerCallback(MyHandler myhandler) {
         mHandler = myhandler;
@@ -38,7 +39,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "START ---> onCharacteristicReadRequest()");
         Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
 
-        if(characteristic.getUuid().toString().equals(BleUuid.CHAR_NAME_STRING)) {
+        if(characteristic.getUuid().toString().equalsIgnoreCase(BleUuid.CHAR_NAME_STRING)) {
             mGattServer.sendResponse(device, requestId,
                     BluetoothGatt.GATT_SUCCESS, offset,
                     characteristic.getValue());
@@ -65,7 +66,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
 
 
         if (characteristic.getUuid().equals(UUID.fromString(BleUuid.CHAR_ONOFF_STRING))) {
-            if (value != null && value.length > 0 && value.length < 21) {
+            if (value != null && value.length > 0 && value.length < 1000) {
                 try {
                     mName = new String(value, "UTF-8");
                 }catch (UnsupportedEncodingException e){
@@ -76,6 +77,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
             } else {
                 Log.d(TAG, "invalid value written");
             }
+            mOffset = offset;
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
         }
         Message message = new Message();
@@ -125,11 +127,12 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "requestId : " + requestId);
         Log.d(TAG, "execute : " + execute);
         super.onExecuteWrite(device, requestId, execute);
-        //mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+        mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, mOffset, null);
 
     }
     public void onMtuChanged (BluetoothDevice device, int mtu){
-        Log.d(TAG, "START ---> onMtuChanged()");
+        // これはAPI22(Android 5.1)から呼ばれる
+        Log.d(TAG, "START ---> onMtuChanged() device : " + device.getName() + " MTU(int) : " + mtu);
 
     }
     public void onNotificationSent (BluetoothDevice device, int status){
