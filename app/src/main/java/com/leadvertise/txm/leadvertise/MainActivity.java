@@ -2,17 +2,10 @@ package com.leadvertise.txm.leadvertise;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
@@ -23,8 +16,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 
@@ -110,8 +101,13 @@ public class MainActivity extends Activity {
 
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.UUID_TEST_READWRITE),
+//                    BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE,
+//                    BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
                     BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE,
-                    BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
+//                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM |
+                    BluetoothGattCharacteristic.PERMISSION_READ|
+//                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM |
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
             char_name.setValue("初期値だ");
 
 
