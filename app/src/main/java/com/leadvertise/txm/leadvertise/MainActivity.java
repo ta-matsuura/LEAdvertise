@@ -104,26 +104,26 @@ public class MainActivity extends Activity {
             mGattServerCallback = new GattServerCallback(myhandler);
             mGattServer = mBluetoothManager.openGattServer(this, mGattServerCallback);
             mGattServerCallback.setGattServer(mGattServer);
-            BluetoothGattService dis = new BluetoothGattService(
-                    UUID.fromString(BleUuid.CHAR_INFO),
+            BluetoothGattService gattService = new BluetoothGattService(
+                    UUID.fromString(BleUuid.UUID_GATT_SERVICE),
                     BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
-                    UUID.fromString(BleUuid.CHAR_NAME_STRING),
-                    BluetoothGattCharacteristic.PROPERTY_READ,
-                    BluetoothGattCharacteristic.PERMISSION_READ);
-            char_name.setValue("KTEC Corp");
+                    UUID.fromString(BleUuid.UUID_TEST_READWRITE),
+                    BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE,
+                    BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
+            char_name.setValue("初期値だ");
 
 
             BluetoothGattCharacteristic char_onoff = new BluetoothGattCharacteristic(
-                    UUID.fromString(BleUuid.CHAR_ONOFF_STRING),
+                    UUID.fromString(BleUuid.UUID_TEST_WRITEONLY),
                     BluetoothGattCharacteristic.PROPERTY_WRITE,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
 
-            dis.addCharacteristic(char_name);
-            dis.addCharacteristic(char_onoff);
-            addTestCharactaristic(dis);
-            mGattServer.addService(dis);
+            gattService.addCharacteristic(char_name);
+            gattService.addCharacteristic(char_onoff);
+            //addTestCharactaristic(gattService);
+            mGattServer.addService(gattService);
         }
 
         mAdvertiseCallback = new AdvCallback();
@@ -152,7 +152,7 @@ public class MainActivity extends Activity {
 
 
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
-        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.ADV_SERVICE_DATA_UUID);
+        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.UUID_SERVICE_DATA);
         dataBuilder.addServiceData(uuid, serviceData);
 
         return dataBuilder.build();
@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
 
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
         dataBuilder.setIncludeTxPowerLevel(false);
-        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.ADV_SERVICE_UUID);
+        ParcelUuid uuid = ParcelUuid.fromString(BleUuid.UUID_SERVICE);
 
         //UUIDとDevice名は共存できない。セットすると長過ぎるってエラーになる
         dataBuilder.addServiceUuid(uuid);

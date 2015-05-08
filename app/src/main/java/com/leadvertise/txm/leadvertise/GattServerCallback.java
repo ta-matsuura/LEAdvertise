@@ -39,11 +39,9 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "START ---> onCharacteristicReadRequest()");
         Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
 
-        if(characteristic.getUuid().toString().equalsIgnoreCase(BleUuid.CHAR_NAME_STRING)) {
-            mGattServer.sendResponse(device, requestId,
-                    BluetoothGatt.GATT_SUCCESS, offset,
-                    characteristic.getValue());
-        }
+        mGattServer.sendResponse(device, requestId,
+                BluetoothGatt.GATT_SUCCESS, offset,
+                characteristic.getValue());
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("msg_type", MyConstants.READ_REQ_RESULT);
@@ -58,6 +56,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                                               boolean preparedWrite, boolean responseNeeded,
                                               int offset, byte[] value){
         Log.d(TAG, "START ---> onCharacteristicWriteRequest()");
+        Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
         Log.d(TAG, "value.length = " + value.length);
         Log.d(TAG, "offset : " + offset);
         Log.d(TAG, "requestId : " + requestId);
@@ -65,21 +64,20 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "preparedWrite : " + preparedWrite);
 
 
-        if (characteristic.getUuid().equals(UUID.fromString(BleUuid.CHAR_ONOFF_STRING))) {
-            if (value != null && value.length > 0 && value.length < 1000) {
-                try {
-                    mName = new String(value, "UTF-8");
-                }catch (UnsupportedEncodingException e){
-                    e.printStackTrace();
-                }
-                Log.d(TAG, "name : " + mName);
-
-            } else {
-                Log.d(TAG, "invalid value written");
+        if (value != null && value.length > 0 && value.length < 1000) {
+            try {
+                mName = new String(value, "UTF-8");
+            }catch (UnsupportedEncodingException e){
+                e.printStackTrace();
             }
-            mOffset = offset;
-            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
+            characteristic.setValue(mName);
+            Log.d(TAG, "name : " + mName);
+
+        } else {
+            Log.d(TAG, "invalid value written");
         }
+        mOffset = offset;
+        mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
