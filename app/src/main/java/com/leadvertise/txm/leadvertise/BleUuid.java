@@ -11,6 +11,9 @@ public class BleUuid {
     public static final String UUID_TEST_READWRITE  = "99999999-2222-4444-4444-222222222222";
     public static final String UUID_TEST_WRITEONLY  = "99999999-3333-4444-4444-222222222222";
 
+    public static final String UUID_TEST_DISCRIPTOR  = "44444444-1111-4444-4444-222222222222";
+
+
     public static final String TEST1 = "AAAA0001-3333-4444-4444-222222222222";
     public static final String TEST2 = "AAAA0002-3333-4444-4444-222222222222";
     public static final String TEST3 = "AAAA0003-3333-4444-4444-222222222222";

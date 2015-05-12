@@ -3,6 +3,7 @@ package com.leadvertise.txm.leadvertise;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -101,14 +102,31 @@ public class MainActivity extends Activity {
 
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.UUID_TEST_READWRITE),
-//                    BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE,
-//                    BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
-                    BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE,
-//                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM |
+//                    BluetoothGattCharacteristic.PROPERTY_READ |
+//                    BluetoothGattCharacteristic.PROPERTY_WRITE,
+//                    BluetoothGattCharacteristic.PERMISSION_READ |
+//                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+                    BluetoothGattCharacteristic.PROPERTY_READ |
+                    BluetoothGattCharacteristic.PROPERTY_WRITE |
+                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
                     BluetoothGattCharacteristic.PERMISSION_READ|
-//                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM |
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            char_name.setValue("初期値だ");
+            char_name.setValue("12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890");
+
+            BluetoothGattDescriptor descriptor =
+                    new BluetoothGattDescriptor(UUID.fromString(BleUuid.UUID_TEST_DISCRIPTOR),
+                            BluetoothGattDescriptor.PERMISSION_READ);
+            descriptor.setValue(new byte[]{0x01, 0x00});
+            char_name.addDescriptor(descriptor);
 
 
             BluetoothGattCharacteristic char_onoff = new BluetoothGattCharacteristic(

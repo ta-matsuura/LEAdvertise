@@ -78,7 +78,9 @@ public class GattServerCallback extends BluetoothGattServerCallback{
             Log.d(TAG, "invalid value written");
         }
         mOffset = offset;
-        mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,null);
+        if (responseNeeded) {
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+        }
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
