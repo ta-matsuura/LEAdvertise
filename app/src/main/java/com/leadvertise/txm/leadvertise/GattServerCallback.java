@@ -14,6 +14,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
@@ -25,6 +26,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     private BluetoothGattServer mGattServer;
     private MyHandler mHandler;
     private int mOffset;
+    ByteBuffer tempBuff = ByteBuffer. allocate(512);
 
     public GattServerCallback(MyHandler myhandler) {
         mHandler = myhandler;
@@ -66,28 +68,57 @@ public class GattServerCallback extends BluetoothGattServerCallback{
 
 
         if (value != null && value.length > 0 && value.length < 1000) {
-            try {
-                mName = new String(value, "UTF-8");
-            }catch (UnsupportedEncodingException e){
-                e.printStackTrace();
+
+            if (preparedWrite) {
+                if (offset == 0) { //分割チャンクの始め
+                    tempBuff.clear();
+                    tempBuff.put(value);
+                } else if (offset == 18){ //分割チャンクの中
+                    tempBuff.put(value);
+                } else {  //分割されたチャンクの最後
+                    byte[] tempByte;
+                    tempBuff.put(value);
+                    tempByte = tempBuff.array();
+                    try {
+                        mName = new String(tempByte, "UTF-8");
+                    }catch (UnsupportedEncodingException e){
+                        e.printStackTrace();
+                    }
+                    characteristic.setValue(mName);
+                    Log.d(TAG, "name : " + mName);
+                    Message message = new Message();
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
+                    bundle.putString("value", mName);
+                    message.setData(bundle);
+                    Log.d(TAG, "send Message to handler");
+                    mHandler.sendMessage(message);
+                }
+            } else {
+                try {
+                    mName = new String(value, "UTF-8");
+                }catch (UnsupportedEncodingException e){
+                    e.printStackTrace();
+                }
+                characteristic.setValue(mName);
+                Log.d(TAG, "name : " + mName);
+                Message message = new Message();
+                Bundle bundle = new Bundle();
+                bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
+                bundle.putString("value", mName);
+                message.setData(bundle);
+                Log.d(TAG, "send Message to handler");
+                mHandler.sendMessage(message);
             }
-            characteristic.setValue(mName);
-            Log.d(TAG, "name : " + mName);
 
         } else {
             Log.d(TAG, "invalid value written");
         }
         mOffset = offset;
         if (responseNeeded) {
-            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
         }
-        Message message = new Message();
-        Bundle bundle = new Bundle();
-        bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
-        bundle.putString("value", mName);
-        message.setData(bundle);
-        Log.d(TAG, "send Message to handler");
-        mHandler.sendMessage(message);
+
     }
     public void onConnectionStateChange (BluetoothDevice device, int status, int newState){
         Log.d(TAG, "START ---> onConnectionStateChange()");

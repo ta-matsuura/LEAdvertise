@@ -102,25 +102,20 @@ public class MainActivity extends Activity {
 
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.UUID_TEST_READWRITE),
+                    /* 標準の設定 */
 //                    BluetoothGattCharacteristic.PROPERTY_READ |
 //                    BluetoothGattCharacteristic.PROPERTY_WRITE,
 //                    BluetoothGattCharacteristic.PERMISSION_READ |
+//                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS |
 //                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+                    /* アクセスに認証を与える設定*/
                     BluetoothGattCharacteristic.PROPERTY_READ |
                     BluetoothGattCharacteristic.PROPERTY_WRITE |
                     BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
-                    BluetoothGattCharacteristic.PERMISSION_READ|
-                    BluetoothGattCharacteristic.PERMISSION_WRITE);
-            char_name.setValue("12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890" +
-                    "12345678901234567890123456789012345678901234567890");
+                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM|
+                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM);
+            char_name.setValue("初期値だよ");
 
             BluetoothGattDescriptor descriptor =
                     new BluetoothGattDescriptor(UUID.fromString(BleUuid.UUID_TEST_DISCRIPTOR),
