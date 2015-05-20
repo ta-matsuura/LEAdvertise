@@ -28,6 +28,14 @@
         android:id="@+id/btn_disconnect"
         android:layout_alignTop="@+id/btn_start"
         android:layout_toRightOf="@id/btn_start"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="notify"
+        android:id="@+id/btn_notify"
+        android:layout_alignTop="@+id/btn_start"
+        android:layout_toRightOf="@id/btn_disconnect"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

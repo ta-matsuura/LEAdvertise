@@ -26,6 +26,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     private BluetoothGattServer mGattServer;
     private MyHandler mHandler;
     private int mOffset;
+    private BluetoothDevice mDevice;
     ByteBuffer tempBuff = ByteBuffer. allocate(512);
 
     public GattServerCallback(MyHandler myhandler) {
@@ -35,16 +36,23 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     public void setGattServer(BluetoothGattServer mGattServer) {
         this.mGattServer = mGattServer;
     }
-
+    public BluetoothDevice getDevice() {
+        return mDevice;
+    }
 
     public void onCharacteristicReadRequest (BluetoothDevice device, int requestId, int offset,
                                              BluetoothGattCharacteristic characteristic){
         Log.d(TAG, "START ---> onCharacteristicReadRequest()");
-        Log.d(TAG, "CHARA UUID : " + characteristic.getUuid().toString());
+        Log.d(TAG, "requestId : " + requestId);
+        Log.d(TAG, "offset : " + offset);
+        Log.d(TAG, "getValue : " + characteristic.getValue());
+        Log.d(TAG, "length : " + characteristic.getValue().length);
+
 
         mGattServer.sendResponse(device, requestId,
                 BluetoothGatt.GATT_SUCCESS, offset,
                 characteristic.getValue());
+
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("msg_type", MyConstants.READ_REQ_RESULT);
@@ -123,6 +131,9 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     public void onConnectionStateChange (BluetoothDevice device, int status, int newState){
         Log.d(TAG, "START ---> onConnectionStateChange()");
         Log.d(TAG, "status : " + status + "(0 means GATT_SUCCESS)");
+        if (status == 0) {
+            mDevice = device;
+        }
         switch(newState) {
             case BluetoothProfile.STATE_CONNECTED:
                 Log.d(TAG, "newState : STATE_CONNECTED");
@@ -132,6 +143,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
                 Log.d(TAG, "newState : STATE_DISCONNECTED");
+                mDevice = null;
                 break;
             case BluetoothProfile.STATE_DISCONNECTING:
                 Log.d(TAG, "newState : STATE_DISCONNECTING");
@@ -143,6 +155,8 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     public void onDescriptorReadRequest (BluetoothDevice device, int requestId, int offset,
                                          BluetoothGattDescriptor descriptor){
         Log.d(TAG, "START ---> onDescriptorReadRequest()");
+        mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+
 
 
     }
@@ -151,6 +165,8 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                                           boolean preparedWrite, boolean responseNeeded,
                                           int offset, byte[] value){
         Log.d(TAG, "START ---> onDescriptorWriteRequest()");
+        mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+
 
 
     }

@@ -30,6 +30,8 @@ public class MainActivity extends Activity {
     private AdvCallback mAdvertiseCallback;
     private GattServerCallback mGattServerCallback;
 
+    public BluetoothGattCharacteristic mCharaNoti;
+
     public boolean isAdvertising() {
         return isAdvertising;
     }
@@ -53,6 +55,12 @@ public class MainActivity extends Activity {
                 startAdvertising();
             }
         });
+        findViewById(R.id.btn_notify).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                givChangeToNotify();
+            }
+        });
         findViewById(R.id.btn_disconnect).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -62,6 +70,27 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    private void givChangeToNotify() {
+        if (mCharaNoti == null) {
+            Log.d(TAG, "mCharaNoti  is NULL ");
+
+            return;
+        }
+        Log.d(TAG, "mCharaNoti : " + mCharaNoti.getStringValue(0));
+
+        if (mCharaNoti.getStringValue(0).equals("OFF")) {
+            mCharaNoti.setValue("ON");
+            Log.d(TAG, "mCharaNoti  <--- ON ");
+
+        } else {
+            mCharaNoti.setValue("OFF");
+            Log.d(TAG, "mCharaNoti  <--- OFF ");
+        }
+        if (mGattServer != null) {
+            mGattServer.notifyCharacteristicChanged(mGattServerCallback.getDevice(), mCharaNoti, true);
+        }
     }
 
     private void stopAdvertising(){
@@ -103,18 +132,18 @@ public class MainActivity extends Activity {
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.UUID_TEST_READWRITE),
                     /* 標準の設定 */
-//                    BluetoothGattCharacteristic.PROPERTY_READ |
-//                    BluetoothGattCharacteristic.PROPERTY_WRITE,
-//                    BluetoothGattCharacteristic.PERMISSION_READ |
-//                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS |
-//                    BluetoothGattCharacteristic.PERMISSION_WRITE);
-
-                    /* アクセスに認証を与える設定*/
                     BluetoothGattCharacteristic.PROPERTY_READ |
                     BluetoothGattCharacteristic.PROPERTY_WRITE |
                     BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
-                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM|
-                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM);
+                    BluetoothGattCharacteristic.PERMISSION_READ |
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+                    /* アクセスに認証を与える設定*/
+//                    BluetoothGattCharacteristic.PROPERTY_READ |
+//                    BluetoothGattCharacteristic.PROPERTY_WRITE |
+//                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
+//                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM|
+//                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM);
             char_name.setValue("初期値だよ");
 
             BluetoothGattDescriptor descriptor =
@@ -124,13 +153,22 @@ public class MainActivity extends Activity {
             char_name.addDescriptor(descriptor);
 
 
-            BluetoothGattCharacteristic char_onoff = new BluetoothGattCharacteristic(
-                    UUID.fromString(BleUuid.UUID_TEST_WRITEONLY),
-                    BluetoothGattCharacteristic.PROPERTY_WRITE,
-                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+            mCharaNoti = new BluetoothGattCharacteristic(
+                    UUID.fromString(BleUuid.UUID_TEST_READNOTIF),
+                    BluetoothGattCharacteristic.PROPERTY_READ |
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                    BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PROPERTY_WRITE);
+
+            mCharaNoti.setValue("OFF");
+
+            BluetoothGattDescriptor discriptorNofi =
+                    new BluetoothGattDescriptor(UUID.fromString(BleUuid.UUID_CCCD),
+                            BluetoothGattDescriptor.PERMISSION_READ | BluetoothGattDescriptor.PERMISSION_WRITE);
+            mCharaNoti.addDescriptor(discriptorNofi);
 
             gattService.addCharacteristic(char_name);
-            gattService.addCharacteristic(char_onoff);
+            gattService.addCharacteristic(mCharaNoti);
             //addTestCharactaristic(gattService);
             mGattServer.addService(gattService);
         }
