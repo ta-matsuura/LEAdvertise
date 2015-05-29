@@ -47,6 +47,8 @@ public class MainActivity extends Activity {
         mBluetoothManager = (BluetoothManager)getSystemService(BLUETOOTH_SERVICE);
         if(mBluetoothManager != null && mBluetoothAdapter == null) {
             mBluetoothAdapter = mBluetoothManager.getAdapter();
+            Log.d(TAG, "getAddress : " + mBluetoothAdapter.getAddress());
+
         }
 
         findViewById(R.id.btn_start).setOnClickListener(new View.OnClickListener() {
@@ -111,6 +113,9 @@ public class MainActivity extends Activity {
 
         if(mBTAdvertiser == null) {
             mBTAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
+            Log.d(TAG, "getAddress : " + mBluetoothAdapter.getAddress());
+
+
         }
         final boolean isAdvertiseSupported = mBTAdvertiser != null;
 
@@ -132,18 +137,18 @@ public class MainActivity extends Activity {
             BluetoothGattCharacteristic char_name = new BluetoothGattCharacteristic(
                     UUID.fromString(BleUuid.UUID_TEST_READWRITE),
                     /* 標準の設定 */
-                    BluetoothGattCharacteristic.PROPERTY_READ |
-                    BluetoothGattCharacteristic.PROPERTY_WRITE |
-                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
-                    BluetoothGattCharacteristic.PERMISSION_READ |
-                    BluetoothGattCharacteristic.PERMISSION_WRITE);
-
-                    /* アクセスに認証を与える設定*/
 //                    BluetoothGattCharacteristic.PROPERTY_READ |
 //                    BluetoothGattCharacteristic.PROPERTY_WRITE |
 //                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
-//                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM|
-//                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM);
+//                    BluetoothGattCharacteristic.PERMISSION_READ |
+//                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+
+                    /* アクセスに認証を与える設定*/
+                    BluetoothGattCharacteristic.PROPERTY_READ |
+                    BluetoothGattCharacteristic.PROPERTY_WRITE |
+                    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
+                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM|
+                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM);
             char_name.setValue("初期値だよ");
 
             BluetoothGattDescriptor descriptor =
