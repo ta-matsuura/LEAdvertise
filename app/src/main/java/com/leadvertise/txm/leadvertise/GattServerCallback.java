@@ -137,6 +137,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         switch(newState) {
             case BluetoothProfile.STATE_CONNECTED:
                 Log.d(TAG, "newState : STATE_CONNECTED");
+                mGattServer.connect(device, false);
                 break;
             case BluetoothProfile.STATE_CONNECTING:
                 Log.d(TAG, "newState : STATE_CONNECTING");
