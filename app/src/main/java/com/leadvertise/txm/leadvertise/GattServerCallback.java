@@ -136,8 +136,15 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         }
         switch(newState) {
             case BluetoothProfile.STATE_CONNECTED:
+                Log.d(TAG, "toString : "  + device.toString());
+                Log.d(TAG, "getName : "  + device.getName());
+                Log.d(TAG, "getAddress : "  + device.getAddress());
+                Log.d(TAG, "getUuids : "  + device.getUuids());
+                Log.d(TAG, "getType : "  + device.getType());
                 Log.d(TAG, "newState : STATE_CONNECTED");
+
                 mGattServer.connect(device, false);
+                //mGattServer.cancelConnection(device);
                 break;
             case BluetoothProfile.STATE_CONNECTING:
                 Log.d(TAG, "newState : STATE_CONNECTING");
@@ -166,6 +173,20 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                                           boolean preparedWrite, boolean responseNeeded,
                                           int offset, byte[] value){
         Log.d(TAG, "START ---> onDescriptorWriteRequest()");
+        String myString = "";
+        descriptor.setValue(value);
+
+        try {
+            myString = new String(value, "UTF-8");
+        }catch (UnsupportedEncodingException e){
+            e.printStackTrace();
+        }
+        Log.d(TAG, "value : " + myString);
+        Log.d(TAG, "offset : " + offset);
+        Log.d(TAG, "preparedWrite : " + preparedWrite);
+        Log.d(TAG, "responseNeeded : " + responseNeeded);
+
+
         mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
 
 
