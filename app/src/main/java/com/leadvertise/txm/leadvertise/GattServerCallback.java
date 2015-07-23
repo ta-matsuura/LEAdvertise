@@ -8,13 +8,13 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -27,7 +27,9 @@ public class GattServerCallback extends BluetoothGattServerCallback{
     private MyHandler mHandler;
     private int mOffset;
     private BluetoothDevice mDevice;
-    ByteBuffer tempBuff = ByteBuffer. allocate(512);
+    ByteBuffer tempBuff = ByteBuffer.allocate(512);
+    private int longDataLength = 0;
+    private BluetoothGattService mGattService;
 
     public GattServerCallback(MyHandler myhandler) {
         mHandler = myhandler;
@@ -48,10 +50,33 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "getValue : " + characteristic.getValue());
         Log.d(TAG, "length : " + characteristic.getValue().length);
 
+        byte[] longData = characteristic.getValue();
+        int length = longData.length;
 
-        mGattServer.sendResponse(device, requestId,
-                BluetoothGatt.GATT_SUCCESS, offset,
-                characteristic.getValue());
+        int SPLIT_SIZE = 22;
+        if(length > SPLIT_SIZE) {
+            /* Read Long Characteristic */
+            if(length - offset > SPLIT_SIZE) {
+                byte[] copy = Arrays.copyOfRange(longData, offset, offset + SPLIT_SIZE);
+                mGattServer.sendResponse(device, requestId,
+                        BluetoothGatt.GATT_SUCCESS, offset,
+                        copy);
+                Log.d(TAG, "route 1 : copy of length : " + copy.length);
+
+            } else {
+
+                byte[] copy = Arrays.copyOfRange(longData, offset, length);
+                mGattServer.sendResponse(device, requestId,
+                        BluetoothGatt.GATT_SUCCESS, offset,
+                        copy);
+                Log.d(TAG, "route 2 : copy of length : " + copy.length);
+
+            }
+        } else {
+            mGattServer.sendResponse(device, requestId,
+                    BluetoothGatt.GATT_SUCCESS, offset,
+                    characteristic.getValue());
+        }
 
         Message message = new Message();
         Bundle bundle = new Bundle();
@@ -75,33 +100,18 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "preparedWrite : " + preparedWrite);
 
 
-        if (value != null && value.length > 0 && value.length < 1000) {
+        if (value.length > 0) {
 
             if (preparedWrite) {
-                if (offset == 0) { //分割チャンクの始め
+            /* Write Long Characteristic */
+                if(offset == 0) {
+                    longDataLength = 0;
                     tempBuff.clear();
-                    tempBuff.put(value);
-                } else if (offset == 18){ //分割チャンクの中
-                    tempBuff.put(value);
-                } else {  //分割されたチャンクの最後
-                    byte[] tempByte;
-                    tempBuff.put(value);
-                    tempByte = tempBuff.array();
-                    try {
-                        mName = new String(tempByte, "UTF-8");
-                    }catch (UnsupportedEncodingException e){
-                        e.printStackTrace();
-                    }
-                    characteristic.setValue(mName);
-                    Log.d(TAG, "name : " + mName);
-                    Message message = new Message();
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
-                    bundle.putString("value", mName);
-                    message.setData(bundle);
-                    Log.d(TAG, "send Message to handler");
-                    mHandler.sendMessage(message);
+
                 }
+                longDataLength += value.length;
+                tempBuff.put(value);
+                Log.d(TAG, "longDataLength : " + longDataLength);
             } else {
                 try {
                     mName = new String(value, "UTF-8");
@@ -124,6 +134,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         }
         mOffset = offset;
         if (responseNeeded) {
+            Log.d(TAG, "Send a response to client.");
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
         }
 
@@ -197,6 +208,34 @@ public class GattServerCallback extends BluetoothGattServerCallback{
         Log.d(TAG, "requestId : " + requestId);
         Log.d(TAG, "execute : " + execute);
         super.onExecuteWrite(device, requestId, execute);
+
+        ByteBuffer bBuff = ByteBuffer.allocate(longDataLength);
+        bBuff.clear();
+        bBuff.position(0);
+        tempBuff.position(0);
+        tempBuff.limit(longDataLength);
+        bBuff.put(tempBuff);
+
+        byte[] tempByte = bBuff.array();
+        try {
+            mName = new String(tempByte, "UTF-8");
+        }catch (UnsupportedEncodingException e){
+            e.printStackTrace();
+        }
+
+        BluetoothGattCharacteristic characteristic =
+                mGattService.getCharacteristic(UUID.fromString(BleUuid.UUID_TEST_READWRITE));
+
+        characteristic.setValue(mName);
+        Log.d(TAG, "name : " + mName);
+        Message message = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putInt("msg_type", MyConstants.WRITE_REQ_RESULT);
+        bundle.putString("value", mName);
+        message.setData(bundle);
+        Log.d(TAG, "send Message to handler");
+        mHandler.sendMessage(message);
+
         mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, mOffset, null);
 
     }
@@ -236,6 +275,7 @@ public class GattServerCallback extends BluetoothGattServerCallback{
             case BluetoothGatt.GATT_SUCCESS:
                 Log.d(TAG, "status : GATT_SUCCESS");
                 Log.d(TAG, "service uuid : " + service.getUuid().toString());
+                mGattService = service;
                 break;
             case BluetoothGatt.GATT_WRITE_NOT_PERMITTED:
                 Log.d(TAG, "status : GATT_WRITE_NOT_PERMITTED");
