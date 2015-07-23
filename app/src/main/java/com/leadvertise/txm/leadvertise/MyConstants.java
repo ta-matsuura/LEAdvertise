@@ -6,6 +6,5 @@ package com.leadvertise.txm.leadvertise;
 public class MyConstants {
     public final static int READ_REQ_RESULT = 0;
     public final static int WRITE_REQ_RESULT = 1;
-
-
+    public final static int DISCONNECTED = 2;
 }

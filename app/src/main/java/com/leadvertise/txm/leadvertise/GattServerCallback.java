@@ -162,6 +162,12 @@ public class GattServerCallback extends BluetoothGattServerCallback{
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
                 Log.d(TAG, "newState : STATE_DISCONNECTED");
+                Message message = new Message();
+                Bundle bundle = new Bundle();
+                bundle.putInt("msg_type", MyConstants.DISCONNECTED);
+                message.setData(bundle);
+                mHandler.sendMessage(message);
+
                 mDevice = null;
                 break;
             case BluetoothProfile.STATE_DISCONNECTING:

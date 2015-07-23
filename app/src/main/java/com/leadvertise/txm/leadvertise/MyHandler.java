@@ -22,6 +22,8 @@ public abstract class MyHandler extends Handler {
                 str = "What you wrote is ..." + bundle.getString("value");
                 onWriteReqCompleted(str);
                 break;
+            case MyConstants.DISCONNECTED:
+                onDisconnected();
             default:
                 break;
         }
@@ -30,5 +32,6 @@ public abstract class MyHandler extends Handler {
 
     public abstract void onReadReqCompleted(String str);
     public abstract void onWriteReqCompleted(String str);
+    public abstract void onDisconnected();
 
 }

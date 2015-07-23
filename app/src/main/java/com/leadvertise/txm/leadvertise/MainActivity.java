@@ -17,6 +17,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.UUID;
 
 
@@ -253,6 +255,10 @@ public class MainActivity extends Activity {
             TextView tx = (TextView)findViewById(R.id.result_area);
             tx.setText(str);
 
+        }
+        @Override
+        public void onDisconnected() {
+            Toast.makeText(getApplicationContext(), "Disconnected !!", Toast.LENGTH_SHORT).show();
         }
     };
 
